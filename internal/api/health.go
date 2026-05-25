@@ -1,11 +1,16 @@
 package api
 
-import "net/http"
-
+import (
+	"log"
+	"net/http"
+)
 func HealthHandler(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		log.Println("health was not write on response body successfully")
+	}
 }

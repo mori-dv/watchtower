@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -27,7 +28,11 @@ func SendTelegramAlert(botToken, chatId, message string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Println("body of telegram reqeust doesn't closed")
+		}
+	}()
 
 	return nil
 }

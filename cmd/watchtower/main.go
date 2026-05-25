@@ -39,6 +39,9 @@ func main() {
 
 	_ = godotenv.Load()
 
+	mainPort := os.Getenv("MAIN_SERVER_PORT")
+	redisAddress := os.Getenv("REDIS_ADDRESS")
+
 	cfg, err := config.Load("configs/config.yml")
 
 	cfg.Alerts.TelegramBotToken=os.Getenv("TELEGRAM_BOT_TOKEN")
@@ -61,7 +64,7 @@ func main() {
 	results := make(chan checker.Result, 100)
 
 	store := storage.NewRedisStore(
-		"redis:6379",
+		redisAddress,
 	)
 	
 	evaluator := state.NewEvaluator(
@@ -167,7 +170,7 @@ func main() {
 	
 	http.Handle("/metrics",	promhttp.Handler())
 
-	go http.ListenAndServe(":8080", nil)
+	go http.ListenAndServe(mainPort, nil)
 
 	sigChan := make(chan os.Signal, 1)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"time"
+	"log"
 
 	"watchtower/internal/config"
 )
@@ -39,7 +40,11 @@ func (t *TCPChecker) Check(
 		result.Error = err.Error()
 		return result
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Println("connection was not closed and failed")
+		}
+	}()
 	result.Status = StatusUp
 
 	return result
