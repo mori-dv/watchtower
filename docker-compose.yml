@@ -1,0 +1,110 @@
+services:
+  watchtower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    labels:
+      app: watchtower
+      environment: dev
+    
+    container_name: watchtower
+    restart: unless-stopped
+    networks:
+      - watchtower-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+    ports:
+      - "8080:8080"
+  redis:
+    image: redis:8.6.0-alpine
+    container_name: watchtower-redis
+    restart: unless-stopped
+    networks:
+      - watchtower-net
+    ports:
+      - "6379:6379"
+  
+  prometheus:
+    image: prom/prometheus:main-distroless
+    container_name: watchtower-prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - watchtower-net
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    
+    depends_on:
+      - watchtower
+  
+  grafana:
+    image: grafana/grafana:main-distroless
+    container_name: watchtower-grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - watchtower-net
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:300/api/health"]
+    depends_on:
+      - prometheus
+  
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: watchtower-loki
+    ports:
+      - "3100:3100"
+    networks:
+      - watchtower-net
+    volumes:
+      - loki_data:/loki
+      - ./observability/loki/config.yml:/etc/loki/config.yml
+    command: 
+      - --config.file=/etc/loki/config.yml
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+    depends_on:
+      - watchtower
+  
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: watchtower-promtail
+    volumes:
+      - ./observability/promtail/promtail.yml:/etc/promtail/promtail.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+    command: 
+      - --config.file=/etc/promtail/promtail.yml
+    restart: unless-stopped
+    networks:
+      - watchtower-net
+    depends_on:
+      - loki
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  promtail_data:
+
+networks:
+  watchtower-net:
+    driver: bridge

@@ -1,0 +1,36 @@
+workers: 5
+
+targets:
+  - name: google
+    type: http
+    address: https://google.com
+    interval: 30s
+    timeout: 5s
+    retries: 2
+
+  - name: cloudflare-dns
+    type: tcp
+    address: 1.1.1.1:53
+    interval: 15s
+    timeout: 3s
+    retries: 1
+  
+  - name: youtube
+    type: http
+    address: youtube.com
+    interval: 30s
+    timeout: 5s
+    retires: 2
+  
+  - name: divar
+    type: http
+    address: divar.ir
+    interval: 30s
+    timeout: 5s
+    retires: 2
+
+alerts:
+  telegram_bot_token: ""
+  telegram_chat_id: ""
+  cooldown: 15m
+  
