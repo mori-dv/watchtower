@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -170,7 +171,11 @@ func main() {
 	
 	http.Handle("/metrics",	promhttp.Handler())
 
-	go http.ListenAndServe(mainPort, nil)
+	go func() {
+		if err := http.ListenAndServe(mainPort, nil); err != nil {
+			log.Fatalf("couldn't serv the backend http server and have some issues: %v", err)
+		}
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 
