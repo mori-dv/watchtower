@@ -1,0 +1,34 @@
+{
+  "name": "watchtower-landing",
+  "private": true,
+  "version": "1.0.0",
+  "description": "High-end interactive showcase & operational control center for Watchtower uptime & health monitoring service",
+  "type": "module",
+  "scripts": {
+    "dev": "node ./node_modules/vite/bin/vite.js --port=3000 --host=0.0.0.0",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "preview": "node ./node_modules/vite/bin/vite.js preview --port=3000 --host=0.0.0.0",
+    "clean": "rm -rf dist",
+    "lint": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "type-check": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "deploy": "./deploy.sh"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^6.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2"
+  }
+}

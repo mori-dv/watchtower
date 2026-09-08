@@ -1,0 +1,5 @@
+# Watchtower Production Robots Directive
+User-agent: *
+Allow: /
+
+Sitemap: https://watchtower.omnicraft.ir/sitemap.xml

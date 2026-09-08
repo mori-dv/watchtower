@@ -6,37 +6,39 @@ on:
   pull_request:
 
 jobs:
-
   test:
+    name: Test, Lint & Security
     runs-on: ubuntu-latest
 
     steps:
-
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Go
         uses: actions/setup-go@v5
-
         with:
           go-version: "1.25"
+          cache: true
 
-      - name: Install dependencies
+      - name: Download Dependencies
         run: go mod download
 
-      - name: Build
-        run: go build ./...
+      - name: Go Vet
+        run: go vet ./...
 
-      - name: Test
-        run: go test ./...
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9.2.1
-        
+      - name: Run Unit & Integration Tests (Race Detection + Coverage)
+        run: go test -race -v -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck Vulnerability Scanner
+        run: govulncheck ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-      - name: Run Trivy
-        uses: aquasecurity/trivy-action@master
 
-        with:
-          scan-type: fs
-          scan-ref: .
+      - name: Verify Dockerfile Build
+        run: docker build -t watchtower:ci -f Dockerfile .

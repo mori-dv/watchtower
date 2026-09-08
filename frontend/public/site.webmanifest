@@ -1,0 +1,17 @@
+{
+  "name": "Watchtower Sentinel // Uptime & Health Monitoring",
+  "short_name": "Watchtower",
+  "description": "Lightweight production-oriented uptime & health monitoring service written in Go",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08090C",
+  "theme_color": "#08090C",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64 128x128 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

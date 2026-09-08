@@ -27,46 +27,35 @@ This project complements another infrastructure-focused project I built called G
 
 # Features
 
-## Monitoring
-
-* HTTP health checks
-* TCP endpoint monitoring
-* configurable monitoring intervals
-* configurable timeouts
-* retry support
-* latency measurement
-* graceful shutdown
+## Monitoring & Probing
+* **Multi-protocol probes**: HTTP, TCP, and ICMP echo ping
+* **SSL/TLS Certificate Expiry**: Real-time tracking of remaining certificate validity days
+* **Dynamic Target Loading**: Hot-reloading via `POST /reload` or `SIGHUP` without service restart
+* **Worker Pool Architecture**: Non-blocking concurrent job queue with worker goroutines
+* **Strict Timeout Isolation**: Per-attempt deadlines preventing runaway checks
 
 ---
 
-## Reliability Features
-
-* consecutive failure tracking
-* DEGRADED and DOWN states
-* stateful monitoring semantics
-* Redis-backed state persistence
-* alert cooldown protection
-* recovery handling
+## Reliability & Resilience
+* **Exponential Backoff & Jitter**: Suppresses false positives caused by transient network jitter
+* **State Transition Hysteresis**: Multi-failure thresholds (`UP` -> `DEGRADED` -> `DOWN`) and recovery tracking
+* **Coordinated Graceful Shutdown**: `SIGTERM`/`SIGINT` drains in-flight probes and cleans up sockets safely
+* **Decoupled Dual Storage**: Zero-dependency In-Memory store with optional Redis persistence & fallback
+* **Pluggable Alert Dispatchers**: Webhook, Slack, and Telegram with cooldown debouncing to prevent alert storms
 
 ---
 
 ## Observability
+* **Dedicated Prometheus Metrics**:
+  * `watchtower_probe_duration_seconds`: Fine-grained latency histograms
+  * `watchtower_target_up`: Operational availability gauge (1/0)
+  * `watchtower_ssl_cert_expiry_days`: SSL certificate countdown gauge
+  * `watchtower_consecutive_failures`: Consecutive failure streak gauge
+  * `watchtower_probes_total`: Total operations counter
+  * `watchtower_workers_active` & `watchtower_job_queue_size`: Engine telemetry
+* **Pre-provisioned Grafana Dashboards**: Real-time status, latency quantiles (p50/p95), cert expirations, and queue depth
+* **Structured Logging (Zerolog)**: Automated latency spike detection, HTTP status codes, and error root causes
 
-* Prometheus metrics
-* Grafana dashboards
-* Loki log aggregation
-* structured JSON logging
-* uptime metrics
-* latency metrics
-* failure metrics
-
----
-
-## Alerting
-
-* Telegram alerts
-* cooldown-based anti-spam logic
-* state-aware notifications
 
 ---
 
@@ -270,21 +259,26 @@ docker compose up --build
 
 # Services
 
-| Service    | Port |
-| ---------- | ---- |
-| Watchtower | 8080 |
-| Grafana    | 3000 |
-| Prometheus | 9090 |
+| Service     | Port       | Description |
+| ----------- | ---------- | ----------- |
+| Watchtower  | 8080       | Core health monitoring service & management API |
+| Mock Server | 8081, 9000 | Test mock server simulating healthy, slow, flaky & failing services |
+| Redis       | 6379       | Operational state & cooldown storage |
+| Prometheus  | 9090       | Telemetry & metrics scraper |
+| Grafana     | 3000       | Real-time visual monitoring dashboards |
 
 ---
 
-# Metrics
+# Management Endpoints
 
-Prometheus metrics available at:
+| Endpoint | Method | Description |
+| -------- | ------ | ----------- |
+| `/healthz` | GET | Kubernetes liveness probe (200 OK) |
+| `/ready` | GET | Readiness probe (verifies storage connectivity) |
+| `/api/v1/status` | GET | Live snapshot of all targets, latencies & consecutive failures |
+| `/reload` | POST | Triggers dynamic target configuration reload |
+| `/metrics` | GET | Prometheus scrape endpoint |
 
-```text
-/metrics
-```
 
 Includes:
 

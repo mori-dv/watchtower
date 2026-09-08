@@ -1,36 +1,64 @@
-workers: 5
+workers: 10
+queue_size: 500
+log_level: info
+log_format: json
+
+server:
+  port: ":8080"
+
+storage:
+  type: "${STORAGE_TYPE:-memory}"
+  redis_addr: "${REDIS_ADDRESS:-redis:6379}"
+  redis_password: "${REDIS_PASSWORD:-}"
 
 targets:
-  - name: google
+  - name: mock-healthy
     type: http
-    address: https://google.com
-    interval: 30s
-    timeout: 5s
+    address: "${MOCK_SERVER_URL:-http://localhost:8081}/healthy"
+    interval: 10s
+    timeout: 3s
     retries: 2
+
+  - name: mock-flaky
+    type: http
+    address: "${MOCK_SERVER_URL:-http://localhost:8081}/flaky"
+    interval: 15s
+    timeout: 3s
+    retries: 3
+
+  - name: mock-slow
+    type: http
+    address: "${MOCK_SERVER_URL:-http://localhost:8081}/slow"
+    interval: 20s
+    timeout: 5s
+    retries: 1
 
   - name: cloudflare-dns
     type: tcp
     address: 1.1.1.1:53
     interval: 15s
     timeout: 3s
+    retries: 2
+
+  - name: google-dns-icmp
+    type: icmp
+    address: 8.8.8.8
+    interval: 30s
+    timeout: 3s
     retries: 1
-  
-  - name: youtube
-    type: http
-    address: youtube.com
-    interval: 30s
-    timeout: 5s
-    retires: 2
-  
-  - name: divar
-    type: http
-    address: divar.ir
-    interval: 30s
-    timeout: 5s
-    retires: 2
 
 alerts:
-  telegram_bot_token: ""
-  telegram_chat_id: ""
   cooldown: 15m
+  telegram:
+    enabled: false
+    bot_token: "${TELEGRAM_BOT_TOKEN:-}"
+    chat_id: "${TELEGRAM_CHAT_ID:-}"
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL:-}"
+    channel: "#alerts"
+  webhook:
+    enabled: false
+    url: "${WEBHOOK_URL:-}"
+
   

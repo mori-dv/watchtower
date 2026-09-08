@@ -1,20 +1,48 @@
 services:
+  mock-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["/bin/mockserver"]
+    container_name: watchtower-mockserver
+    restart: unless-stopped
+    networks:
+      - watchtower-net
+    ports:
+      - "8081:8081"
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/healthy"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   watchtower:
     build:
       context: .
       dockerfile: Dockerfile
-    labels:
-      app: watchtower
-      environment: dev
-    
     container_name: watchtower
     restart: unless-stopped
     networks:
       - watchtower-net
+    environment:
+      - MAIN_SERVER_PORT=:8080
+      - STORAGE_TYPE=redis
+      - REDIS_ADDRESS=redis:6379
+      - MOCK_SERVER_URL=http://mock-server:8081
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     ports:
       - "8080:8080"
+    depends_on:
+      mock-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   redis:
     image: redis:8.6.0-alpine
     container_name: watchtower-redis
@@ -23,6 +51,11 @@ services:
       - watchtower-net
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
   
   prometheus:
     image: prom/prometheus:main-distroless
@@ -39,14 +72,12 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=7d
-    
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
-    
     depends_on:
       - watchtower
   
@@ -56,13 +87,20 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_SIGNOUT_MENU=true
     networks:
       - watchtower-net
     volumes:
       - grafana_data:/var/lib/grafana
       - ./observability/grafana/provisioning:/etc/grafana/provisioning
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:300/api/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
     depends_on:
       - prometheus
   
@@ -81,6 +119,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
     depends_on:
       - watchtower
   
@@ -103,8 +144,8 @@ volumes:
   prometheus_data:
   grafana_data:
   loki_data:
-  promtail_data:
 
 networks:
   watchtower-net:
     driver: bridge
+
